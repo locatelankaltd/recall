@@ -1,0 +1,77 @@
+{
+  "baseUrl": "http://127.0.0.1:8766",
+  "capturedAt": "2026-10-24T16:33:10.473Z",
+  "captures": [
+    {
+      "file": "review-mobile-welcome.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "review-mobile-today.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "review-mobile-projects.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "review-mobile-project.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "review-mobile-update-editor.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "review-mobile-revision.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "review-mobile-settings.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "review-mobile-settings-dark.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    {
+      "file": "review-desktop-today.png",
+      "viewport": {
+        "width": 1365,
+        "height": 1000
+      }
+    },
+    {
+      "file": "review-desktop-revision.png",
+      "viewport": {
+        "width": 1365,
+        "height": 1000
+      }
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,10 @@
+#include "Generated.xcconfig"
+
+// Xcode 27 lipo rejects Flutter's multi-architecture verification command.
+// Keep Debug simulator builds native to the developer's Mac. Apple Silicon's
+// arm64e host ABI still runs the simulator's arm64 slice. Device and release
+// architecture settings continue to come from Xcode.
+RECALL_SIMULATOR_ARCH_arm64 = arm64
+RECALL_SIMULATOR_ARCH_arm64e = arm64
+RECALL_SIMULATOR_ARCH_x86_64 = x86_64
+ARCHS[sdk=iphonesimulator*] = $(RECALL_SIMULATOR_ARCH_$(NATIVE_ARCH_ACTUAL))

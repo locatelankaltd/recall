@@ -1,0 +1,17 @@
+Back
+Your workspace
+Local workspace · no cloud sync
+Your account
+Subscription
+Deadline reminders
+Interface language
+English
+Choose English, Spanish or French for the interface. Original sources keep their own language. Some service errors and example content may appear in English.
+Privacy and storage
+Mobile project text uses device secure storage. Audio attachments are ordinary app-private files and are not encrypted by that service. Web storage has different protections. Account projects use the configured cloud service; device projects are never uploaded automatically. Optional AI sends only the specific text or whole recording you explicitly approve.
+Export your workspace
+Restore an export
+Build information
+Recall 0.2. Sign in for your cloud workspace and review links. Optional AI and store subscriptions are available when their services are configured. Optional deadline reminders are available on Android and iOS with notification permission.
+Appearance follows your device
+Open-source licenses

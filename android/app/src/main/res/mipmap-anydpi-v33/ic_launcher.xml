@@ -1,0 +1,1 @@
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/recall_icon_background"/><foreground android:drawable="@drawable/recall_foreground"/><monochrome android:drawable="@drawable/recall_monochrome"/></adaptive-icon>

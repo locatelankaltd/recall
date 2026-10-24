@@ -1,0 +1,39 @@
+project_id = "recall-next"
+
+[api]
+enabled = true
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+major_version = 15
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000", "io.recall.app://login-callback"]
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+
+[functions.account-delete]
+# The function authenticates its bearer token with auth.getUser itself.
+verify_jwt = false
+
+[functions.analyze-source]
+# Auth.getUser validates the supplied bearer token in the handler.
+verify_jwt = false
+
+[functions.transcribe-recording]
+# Auth.getUser validates the bearer token before quota or provider access.
+verify_jwt = false
+
+[functions.billing-webhook]
+# RevenueCat Authorization secret is verified by the function.
+verify_jwt = false
+
+[functions.refresh-entitlement]
+# Auth.getUser validates the caller; no request-body identity is trusted.
+verify_jwt = false

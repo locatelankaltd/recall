@@ -1,0 +1,15 @@
+Back
+Your workspace
+Local workspace · no cloud sync
+Interface language
+English
+Interface preview: some explanatory copy falls back to English. Original sources keep their own language.
+Privacy and storage
+Mobile project data uses device secure storage. Web storage has different protections. Cloud AI is not enabled in this build.
+Export your workspace
+Restore an export
+Build information
+Recall rebuild 0.1. Managed AI, store billing, shared synchronization and scheduled notifications are not connected.
+Appearance follows your device
+Leave the example
+Delete local workspace
