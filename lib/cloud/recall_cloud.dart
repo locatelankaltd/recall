@@ -1,102 +1,103 @@
-import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'cloud_gateway.dart';
+import 'recall_api.dart';
 import 'recall_session.dart';
 
 export 'cloud_gateway.dart';
+export 'recall_api.dart';
 export 'recall_session.dart';
 
 class RecallCloudConfig {
   const RecallCloudConfig({
-    required this.url,
-    required this.anonKey,
-    this.authRedirectUrl,
+    this.apiKey = '',
+    this.appId = '',
+    this.projectId = '',
+    this.authDomain = '',
+    this.messagingSenderId = '',
+    this.storageBucket = '',
+    this.apiUrl = '',
+    this.publicAppUrl = '',
   });
   const RecallCloudConfig.fromEnvironment()
-    : url = const String.fromEnvironment('SUPABASE_URL'),
-      anonKey = const String.fromEnvironment('SUPABASE_ANON_KEY'),
-      authRedirectUrl = const String.fromEnvironment('AUTH_REDIRECT_URL');
-  final String url;
-  final String anonKey;
-  final String? authRedirectUrl;
-  bool get configured => url.isNotEmpty && anonKey.isNotEmpty;
+    : apiKey = const String.fromEnvironment('FIREBASE_API_KEY'),
+      appId = const String.fromEnvironment('FIREBASE_APP_ID'),
+      projectId = const String.fromEnvironment('FIREBASE_PROJECT_ID'),
+      authDomain = const String.fromEnvironment('FIREBASE_AUTH_DOMAIN'),
+      messagingSenderId = const String.fromEnvironment(
+        'FIREBASE_MESSAGING_SENDER_ID',
+      ),
+      storageBucket = const String.fromEnvironment('FIREBASE_STORAGE_BUCKET'),
+      apiUrl = const String.fromEnvironment('RECALL_API_URL'),
+      publicAppUrl = const String.fromEnvironment('PUBLIC_APP_URL');
+  final String apiKey,
+      appId,
+      projectId,
+      authDomain,
+      messagingSenderId,
+      storageBucket,
+      apiUrl,
+      publicAppUrl;
+  bool get configured =>
+      apiKey.isNotEmpty &&
+      appId.isNotEmpty &&
+      projectId.isNotEmpty &&
+      messagingSenderId.isNotEmpty;
+  Uri get endpoint => Uri.parse(
+    apiUrl.isEmpty
+        ? 'https://europe-west1-$projectId.cloudfunctions.net/recallApi'
+        : apiUrl,
+  );
   String? get validationError {
     if (!configured) return 'Cloud accounts are not configured in this build.';
-    final uri = Uri.tryParse(url);
+    if (!apiKey.startsWith('AIza') ||
+        apiKey.contains(RegExp(r'\s')) ||
+        apiKey.contains('PRIVATE KEY') ||
+        !RegExp(r'^[a-z][a-z0-9-]{4,28}[a-z0-9]$').hasMatch(projectId) ||
+        !RegExp(r'^1:\d+:(web|android|ios):[a-zA-Z0-9]+$').hasMatch(appId) ||
+        !RegExp(r'^\d+$').hasMatch(messagingSenderId)) {
+      return 'The Firebase public configuration is invalid.';
+    }
+    final uri = Uri.tryParse(
+      apiUrl.isEmpty
+          ? 'https://europe-west1-$projectId.cloudfunctions.net/recallApi'
+          : apiUrl,
+    );
     if (uri == null ||
         uri.host.isEmpty ||
-        !['https', 'http'].contains(uri.scheme)) {
-      return 'The cloud service URL is invalid.';
-    }
-    if (uri.scheme != 'https' &&
-        !['localhost', '127.0.0.1'].contains(uri.host)) {
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        (uri.scheme != 'https' &&
+            !(uri.scheme == 'http' &&
+                ['localhost', '127.0.0.1'].contains(uri.host)))) {
       return 'The cloud service requires a secure connection.';
     }
-    if (anonKey.startsWith('sb_secret_')) {
-      return 'A public client key is required.';
-    }
-    final parts = anonKey.split('.');
-    if (parts.length == 3) {
-      try {
-        final payload = jsonDecode(
-          utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
-        );
-        if (payload is Map && payload['role'] != 'anon') {
-          return 'A public client key is required.';
-        }
-      } catch (_) {
-        return 'The public client key is invalid.';
+    if (publicAppUrl.isNotEmpty) {
+      final public = Uri.tryParse(publicAppUrl);
+      if (public == null ||
+          public.host.isEmpty ||
+          public.userInfo.isNotEmpty ||
+          public.hasQuery ||
+          public.hasFragment ||
+          (public.scheme != 'https' &&
+              !(public.scheme == 'http' &&
+                  ['localhost', '127.0.0.1'].contains(public.host)))) {
+        return 'The public app address is invalid.';
       }
     }
     return null;
   }
-}
 
-/// Auth sessions and PKCE verifiers use platform secure storage, scoped to the
-/// configured backend so switching environments cannot restore another session.
-class SecureRecallAuthStorage extends LocalStorage {
-  SecureRecallAuthStorage({
-    required this.namespace,
-    FlutterSecureStorage? storage,
-  }) : _storage = storage ?? const FlutterSecureStorage();
-  final String namespace;
-  final FlutterSecureStorage _storage;
-  String get _key => 'recall.auth.$namespace.session.v1';
-  @override
-  Future<void> initialize() async {}
-  @override
-  Future<bool> hasAccessToken() async => await accessToken() != null;
-  @override
-  Future<String?> accessToken() => _storage.read(key: _key);
-  @override
-  Future<void> persistSession(String persistSessionString) =>
-      _storage.write(key: _key, value: persistSessionString);
-  @override
-  Future<void> removePersistedSession() => _storage.delete(key: _key);
-}
-
-class SecureRecallPkceStorage extends GotrueAsyncStorage {
-  SecureRecallPkceStorage({
-    required this.namespace,
-    FlutterSecureStorage? storage,
-  }) : _storage = storage ?? const FlutterSecureStorage();
-  final String namespace;
-  final FlutterSecureStorage _storage;
-  String _key(String key) => 'recall.auth.$namespace.pkce.$key';
-  @override
-  Future<String?> getItem({required String key}) =>
-      _storage.read(key: _key(key));
-  @override
-  Future<void> setItem({required String key, required String value}) =>
-      _storage.write(key: _key(key), value: value);
-  @override
-  Future<void> removeItem({required String key}) =>
-      _storage.delete(key: _key(key));
+  FirebaseOptions get options => FirebaseOptions(
+    apiKey: apiKey,
+    appId: appId,
+    projectId: projectId,
+    messagingSenderId: messagingSenderId,
+    authDomain: authDomain.isEmpty ? '$projectId.firebaseapp.com' : authDomain,
+    storageBucket: storageBucket.isEmpty ? null : storageBucket,
+  );
 }
 
 class RecallCloud {
@@ -110,14 +111,14 @@ class RecallCloud {
     required RecallSessionManager session,
     CloudProjectGateway? projects,
     CloudReviewGateway? reviews,
-    SupabaseClient? client,
+    RecallApiClient? client,
   }) => RecallCloud._(
     session: session,
     projects: projects,
     reviews: reviews,
     client: client,
   );
-  final SupabaseClient? client;
+  final RecallApiClient? client;
   final RecallSessionManager session;
   final CloudProjectGateway? projects;
   final CloudReviewGateway? reviews;
@@ -131,35 +132,33 @@ class RecallCloud {
       );
     }
     try {
-      final namespace = base64Url.encode(utf8.encode(config.url));
-      await Supabase.initialize(
-        url: config.url,
-        publishableKey: config.anonKey,
-        debug: false,
-        authOptions: FlutterAuthClientOptions(
-          localStorage: SecureRecallAuthStorage(namespace: namespace),
-          pkceAsyncStorage: SecureRecallPkceStorage(namespace: namespace),
-        ),
+      final app = Firebase.apps.isEmpty
+          ? await Firebase.initializeApp(options: config.options)
+          : Firebase.app();
+      if (app.options.projectId != config.projectId ||
+          app.options.appId != config.appId) {
+        throw StateError('Firebase environment mismatch');
+      }
+      final auth = FirebaseAuth.instanceFor(app: app);
+      final identity = FirebaseRecallIdentity(auth);
+      final client = RecallApiClient(
+        endpoint: config.endpoint,
+        identity: identity,
       );
-      final client = Supabase.instance.client;
-      final auth = SupabaseRecallAuthProvider(
-        client,
-        redirectUrl: config.authRedirectUrl,
+      final provider = FirebaseRecallAuthProvider(
+        auth: auth,
+        client: client,
+        publicAppUrl: config.publicAppUrl,
       );
-      final session = RecallSessionManager(provider: auth);
-      final transport = SupabaseRecallTransport(
-        client,
-        supabaseUrl: config.url,
-        publicKey: config.anonKey,
-      );
+      final session = RecallSessionManager(provider: provider);
       return RecallCloud._(
         client: client,
         session: session,
         projects: RpcCloudProjectGateway(
-          transport: transport,
+          transport: client,
           currentUserId: () => session.userId,
         ),
-        reviews: RpcCloudReviewGateway(transport: transport),
+        reviews: RpcCloudReviewGateway(transport: client),
       );
     } catch (_) {
       return RecallCloud._(
@@ -172,187 +171,154 @@ class RecallCloud {
   }
 }
 
-CloudException _friendlyCloudError(Object problem) {
-  if (problem is CloudException) return problem;
-  if (problem is PostgrestException) {
-    final message = switch (problem.code) {
-      '40001' =>
-        'This plan changed or this review is already closed. Refresh to review the latest version.',
-      'P0002' =>
-        'This project or review link is unavailable, expired, or revoked.',
-      '28000' => 'Sign in again to continue.',
-      '22023' =>
-        'This change could not be accepted. Review the fields and try again.',
-      '23505' =>
-        'This request was already recorded. Refresh to see the result.',
-      '54000' =>
-        'Your workspace has reached its project limit. Review your subscription or remove a project.',
-      _ => 'The cloud request could not be completed. Try again.',
-    };
-    return CloudException(message, code: problem.code);
-  }
-  if (problem is AuthException) {
-    return CloudException(switch (problem.code) {
-      'email_not_confirmed' =>
-        'Verify your email before signing in. Check your inbox for the verification link.',
-      'invalid_credentials' => 'The email or password is incorrect.',
-      'weak_password' => 'Choose a stronger password and try again.',
-      'over_email_send_rate_limit' =>
-        'Please wait before requesting another email.',
-      'user_already_exists' =>
-        'This email may already have an account. Try signing in.',
-      _ => 'This account request could not be completed. Try again.',
-    }, code: problem.code);
-  }
-  return const CloudException(
-    'The cloud service could not be reached. Check your connection and try again.',
-  );
-}
-
-class SupabaseRecallTransport implements CloudRpcTransport {
-  SupabaseRecallTransport(
-    this.client, {
-    required this.supabaseUrl,
-    required this.publicKey,
-    this.publicHttpClient,
-  });
-  final SupabaseClient client;
-  final String supabaseUrl;
-  final String publicKey;
-  // Injected clients remain owned by their caller. Production creates and
-  // closes a plain HTTP client for each public request, with no Auth wrapper.
-  final http.Client? publicHttpClient;
-
-  Future<dynamic> _publicRpc(
-    String function,
-    Map<String, dynamic> params,
-  ) async {
-    final plainHttp = publicHttpClient ?? http.Client();
-    final rest = PostgrestClient(
-      '${supabaseUrl.replaceAll(RegExp(r'/+$'), '')}/rest/v1',
-      headers: {'apikey': publicKey},
-      httpClient: plainHttp,
-      retryEnabled: false,
-      requestTimeout: const Duration(seconds: 30),
-    );
-    try {
-      // Publishable keys are not JWTs. Public bearer reviews use the apikey
-      // header only and cannot inherit an expired or different private session.
-      return await rest.rpc(function, params: params);
-    } finally {
-      try {
-        await rest.dispose();
-      } finally {
-        if (publicHttpClient == null) plainHttp.close();
-      }
-    }
-  }
-
+class FirebaseRecallIdentity implements RecallApiIdentity {
+  const FirebaseRecallIdentity(this.auth);
+  final FirebaseAuth auth;
   @override
-  Future<dynamic> rpc(String function, Map<String, dynamic> params) async {
-    try {
-      if (function == 'recall_review_link' ||
-          function == 'recall_respond_review') {
-        return await _publicRpc(function, params);
-      }
-      // Capture the real user JWT before the SDK's async token lookup. Its
-      // AuthHttpClient preserves this per-request header during account changes.
-      final bearer = client.auth.currentSession?.accessToken;
-      if (bearer == null) {
-        throw const CloudException('Sign in again to continue.');
-      }
-      return await client
-          .rpc(function, params: params)
-          .setHeader('Authorization', 'Bearer $bearer');
-    } catch (problem) {
-      throw _friendlyCloudError(problem);
+  String? get userId => auth.currentUser?.uid;
+  @override
+  Stream<String?> get userChanges =>
+      auth.userChanges().map((user) => user?.uid);
+  @override
+  Future<String?> getIdToken() async {
+    final user = auth.currentUser;
+    if (user == null) return null;
+    final token = await user.getIdToken();
+    if (auth.currentUser?.uid != user.uid) {
+      throw const CloudException(
+        'The account changed. Open the workspace again.',
+        code: 'account_changed',
+      );
     }
+    return token;
   }
 }
 
-class SupabaseRecallAuthProvider implements RecallAuthProvider {
-  SupabaseRecallAuthProvider(this.client, {this.redirectUrl});
-  final SupabaseClient client;
-  final String? redirectUrl;
-  String? get _redirect => redirectUrl?.isNotEmpty == true
-      ? redirectUrl
-      : kIsWeb
-      ? Uri.base.replace(query: '', fragment: '').toString()
-      : 'io.recall.app://login-callback';
+CloudException _authError(
+  FirebaseAuthException error,
+) => CloudException(switch (error.code) {
+  'invalid-credential' ||
+  'wrong-password' ||
+  'user-not-found' => 'The email or password is incorrect.',
+  'email-already-in-use' =>
+    'This email may already have an account. Try signing in.',
+  'weak-password' => 'Choose a stronger password and try again.',
+  'too-many-requests' =>
+    'Please wait before trying this account request again.',
+  'requires-recent-login' => 'Sign in again to continue.',
+  'network-request-failed' =>
+    'The cloud service could not be reached. Check your connection and try again.',
+  _ => 'This account request could not be completed. Try again.',
+}, code: error.code);
+
+class FirebaseRecallAuthProvider implements RecallAuthProvider {
+  const FirebaseRecallAuthProvider({
+    required this.auth,
+    required this.client,
+    this.publicAppUrl = '',
+  });
+  final FirebaseAuth auth;
+  final RecallApiClient client;
+  final String publicAppUrl;
+  ActionCodeSettings? get _actionSettings => publicAppUrl.isEmpty
+      ? null
+      : ActionCodeSettings(url: publicAppUrl, handleCodeInApp: false);
   RecallAccount? _account(User? user) => user == null
       ? null
       : RecallAccount(
-          id: user.id,
+          id: user.uid,
           email: user.email ?? '',
-          emailVerified: user.emailConfirmedAt != null,
+          emailVerified: user.emailVerified,
         );
   @override
-  RecallAccount? get currentAccount => _account(client.auth.currentUser);
+  RecallAccount? get currentAccount => _account(auth.currentUser);
   @override
-  Stream<RecallAuthEvent> get changes => client.auth.onAuthStateChange.map(
-    (state) => RecallAuthEvent(
-      _account(state.session?.user),
-      passwordRecovery: state.event == AuthChangeEvent.passwordRecovery,
-    ),
-  );
-  Future<void> _call(Future<void> Function() operation) async {
+  Stream<RecallAuthEvent> get changes =>
+      auth.userChanges().map((user) => RecallAuthEvent(_account(user)));
+  Future<void> _call(Future<void> Function() action) async {
     try {
-      await operation();
-    } catch (problem) {
-      throw _friendlyCloudError(problem);
+      await action();
+    } on FirebaseAuthException catch (error) {
+      throw _authError(error);
     }
   }
 
   @override
   Future<void> signIn(String email, String password) => _call(() async {
-    await client.auth.signInWithPassword(email: email, password: password);
+    await auth.signInWithEmailAndPassword(email: email, password: password);
   });
   @override
   Future<void> signUp(String email, String password) => _call(() async {
-    await client.auth.signUp(
+    final result = await auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
-      emailRedirectTo: _redirect,
     );
+    final user = result.user;
+    if (user == null) {
+      throw const CloudException(
+        'This account request could not be completed. Try again.',
+      );
+    }
+    await user.sendEmailVerification(_actionSettings);
   });
   @override
-  Future<void> signOut() => _call(() async {
-    await client.auth.signOut();
-  });
+  Future<void> signOut() => _call(auth.signOut);
   @override
-  Future<void> sendPasswordReset(String email) => _call(() async {
-    await client.auth.resetPasswordForEmail(email, redirectTo: _redirect);
-  });
+  Future<void> sendPasswordReset(String email) => _call(
+    () => auth.sendPasswordResetEmail(
+      email: email,
+      actionCodeSettings: _actionSettings,
+    ),
+  );
   @override
   Future<void> updatePassword(String password) => _call(() async {
-    await client.auth.updateUser(UserAttributes(password: password));
+    final user = auth.currentUser;
+    if (user == null) throw const CloudException('Sign in again to continue.');
+    await user.updatePassword(password);
   });
   @override
   Future<void> resendVerification(String email) => _call(() async {
-    await client.auth.resend(
-      type: OtpType.signup,
-      email: email,
-      emailRedirectTo: _redirect,
-    );
+    final user = auth.currentUser;
+    if (user == null || user.email?.toLowerCase() != email.toLowerCase()) {
+      throw const CloudException('Sign in again to continue.');
+    }
+    await user.sendEmailVerification(_actionSettings);
   });
   @override
   Future<void> refreshAccount() => _call(() async {
-    await client.auth.refreshSession();
+    final user = auth.currentUser;
+    if (user == null) throw const CloudException('Sign in again to continue.');
+    await user.reload();
+    if (auth.currentUser?.uid != user.uid) {
+      throw const CloudException(
+        'The account changed. Open the workspace again.',
+      );
+    }
+    await auth.currentUser?.getIdToken(true);
   });
   @override
-  Future<void> deleteAccount() => _call(() async {
-    final bearer = client.auth.currentSession?.accessToken;
-    if (bearer == null) {
+  Future<void> reauthenticate(String password) => _call(() async {
+    final user = auth.currentUser;
+    if (user == null || user.email == null) {
       throw const CloudException('Sign in again to continue.');
     }
-    final response = await client.functions.invoke(
-      'account-delete',
-      headers: {'Authorization': 'Bearer $bearer'},
+    await user.reauthenticateWithCredential(
+      EmailAuthProvider.credential(email: user.email!, password: password),
     );
-    if (response.status != 200) {
+    if (auth.currentUser?.uid != user.uid) {
+      throw const CloudException(
+        'The account changed. Open the workspace again.',
+      );
+    }
+    await user.getIdToken(true);
+  });
+  @override
+  Future<void> deleteAccount() async {
+    final result = await client.invoke('account-delete');
+    if (result is! Map || result['deleted'] != true) {
       throw const CloudException(
         'Your account could not be deleted. Please try again.',
       );
     }
-  });
+  }
 }

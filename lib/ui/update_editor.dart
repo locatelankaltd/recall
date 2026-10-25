@@ -78,7 +78,7 @@ class _UpdateEditorState extends State<UpdateEditor>
         services?.cloud.session.emailVerified != true) {
       return null;
     }
-    return SourceAnalysisClient.forSupabase(client);
+    return SourceAnalysisClient.forCloud(client);
   }
 
   String _t(String key, String fallback) {

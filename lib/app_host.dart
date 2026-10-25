@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'app.dart';
 import 'app_services.dart';
-import 'billing/supabase_billing_server.dart';
+import 'billing/firebase_billing_server.dart';
 import 'cloud/recall_cloud.dart';
 import 'cloud/public_review_page.dart';
 import 'data/recall_controller.dart';
@@ -70,7 +70,9 @@ class _RecallHostState extends State<RecallHost> with WidgetsBindingObserver {
   }
 
   void _accountChanged({bool notify = true}) {
-    final owner = widget.cloud.session.userId;
+    final owner = widget.cloud.session.emailVerified
+        ? widget.cloud.session.userId
+        : null;
     final deletedOwner = widget.cloud.session.deletedUserId;
     if (deletedOwner != null && deletedOwner != _cleanedDeletedOwner) {
       _cleanedDeletedOwner = deletedOwner;
@@ -201,7 +203,7 @@ class _RecallHostState extends State<RecallHost> with WidgetsBindingObserver {
     }
     _planChecks[owner] = now;
     try {
-      final server = SupabaseBillingServer(client);
+      final server = FirebaseBillingServer(client);
       final entitlement = await server.read();
       if (!mounted || widget.cloud.session.userId != owner) return;
       final verified = entitlement.verifiedAt;

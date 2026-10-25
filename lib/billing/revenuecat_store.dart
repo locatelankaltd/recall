@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../cloud/recall_api.dart';
 
 import 'billing_service.dart';
 
@@ -18,17 +18,16 @@ class RevenueCatStore implements BillingStore {
   final String androidKey;
   final String iosKey;
   static Future<void> _queue = Future.value();
-  static SupabaseClient? _observedClient;
-  static StreamSubscription<AuthState>? _authSubscription;
+  static RecallApiClient? _observedClient;
+  static StreamSubscription<String?>? _authSubscription;
   static String? _observedUid;
 
-  static void observeSession(SupabaseClient client) {
+  static void observeSession(RecallApiClient client) {
     if (identical(client, _observedClient)) return;
     unawaited(_authSubscription?.cancel());
     _observedClient = client;
-    _observedUid = client.auth.currentUser?.id;
-    _authSubscription = client.auth.onAuthStateChange.listen((state) {
-      final uid = state.session?.user.id;
+    _observedUid = client.userId;
+    _authSubscription = client.userChanges.listen((uid) {
       if (uid == _observedUid) return;
       _observedUid = uid;
       unawaited(RevenueCatStore().clearIdentity().catchError((_) {}));

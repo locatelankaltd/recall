@@ -32,6 +32,7 @@ abstract class RecallAuthProvider {
   Future<void> updatePassword(String password);
   Future<void> resendVerification(String email);
   Future<void> refreshAccount();
+  Future<void> reauthenticate(String password);
   Future<void> deleteAccount();
 }
 
@@ -160,7 +161,7 @@ class RecallSessionManager extends ChangeNotifier {
     notice = 'Your password has been updated.';
   });
 
-  /// The password is checked with Supabase before account deletion is requested.
+  /// The password is reauthenticated with Firebase before account deletion is requested.
   Future<bool> deleteAccount({required String password}) => _run((
     provider,
   ) async {
@@ -170,7 +171,7 @@ class RecallSessionManager extends ChangeNotifier {
         'Enter your current password to delete this account.',
       );
     }
-    await provider.signIn(before.email, password);
+    await provider.reauthenticate(password);
     if (provider.currentAccount?.id != before.id) {
       throw const CloudException(
         'The account changed. Sign in again before deleting.',

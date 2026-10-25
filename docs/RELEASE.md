@@ -1,158 +1,80 @@
-# Recall 0.2 release acceptance
+# Recall 0.3 release acceptance
 
-Version **0.2.0+2** is a development candidate with the Supabase account gateway,
-recipient review, optional AI, native billing and local reminders implemented in
-code. The Recall cloud environment has not been provisioned, and provider/store
-configuration remains pending. This record separates automated verification,
-builds, installed versions, hosted behavior and publication.
+Package **0.3.0+3**, updated **25 October 2026**. The active implementation uses Firebase Auth, Firestore, Cloud Functions and Hosting in `recall-f1d1e`. Provider/store configuration and live service verification remain separate from compilation and local tests.
 
 ## Current evidence
 
 | Gate | Current result |
 | --- | --- |
-| Full Dart analysis | Passed with zero issues |
-| Full Flutter suite | **142/142 pass**, including 21 billing and 11 reminder tests; `/private/tmp/recall-v02-flutter-tests-final.log` |
-| PostgreSQL | **89 passing assertions** for owner/RLS isolation, immutable versions, CAS/publication, plan limits, atomic budgets and receipt replay |
-| Edge mocks | **47 passing tests**; no external Auth/provider calls or store transactions |
-| Deno | All **five** real Edge entrypoints pass Deno 2.9.6 type/import checks |
-| 0.2 web release build | Passed in 31.2s; Wasm dry run passed; 10 browser captures with `errors: []` |
-| 0.2 Android debug build | Passed; version/package/manifest inspected and debug signature verified |
-| 0.2 Android release AAB | R8/bundle and ZIP CRC passed; **unsigned**, not upload-ready |
-| 0.2 iOS simulator debug build | Build and `codesign --verify --deep --strict` passed; first-launch smoke passed |
-| 0.2 physical-device install/QA | Pending; last verified Samsung development install is **0.1** |
-| Hosted Auth/review/AI/billing | Supabase implementation unprovisioned; Firebase Hosting selected; Firebase-only backend selected; port pending; no deployment |
-| Store-signed artifacts/submission/approval | Not performed |
+| Flutter / analysis | Final 157/157 tests pass; analysis zero issues |
+| Backend | Final build plus 70 tests pass with Admin 14.5 / Functions 7.4 |
+| Production dependency audit | Zero reported vulnerabilities |
+| Web release | Publish build passed in 32.1s with Wasm dry run; later static loader/icon polish leaves compiled Dart unchanged |
+| Firebase infrastructure | Auth/database/apps/runtime IAM configured in the selected project |
+| Firestore rules | Deployed; source match verified; anonymous read returns 403 |
+| Functions / Hosting release | Core API ACTIVE; 82-file Hosting release live; home/sign-in rendering verified |
+| Controlled live API helper | 18/18 direct and 18/18 Hosting-proxy checks pass; all synthetic fixture cleanup verified |
+| Android 0.3 | Retry running after earlier disk-space failure; **no completed 0.3 APK verified yet** |
+| iOS 0.3 | SwiftPM dependency prefetch running; no build/launch result yet |
+| Phone install | Last verified Samsung installation is **0.1**; latest ADB listing has no connected device |
+| Signed store release/submission/approval | Not performed |
+| Source upload | Selected repository verified; initial uploaded baseline `e6f5c30`; consult source history for the delivery revision |
 
-The retained Python/SQLite service has **29 foundation tests** and historical local
-recipient-browser evidence. It is a separate legacy development reference, not
-the primary Supabase account backend. Historical `artifacts/qa/ios-first-launch.png` and
-`artifacts/qa/samsung-first-launch.png` refer to **0.1**. The canonical build output
-paths now contain the **0.2** artifacts below and must not be treated as old 0.1
-files. Private QA evidence is Git-ignored. The original app/package and its data remain separate
-and preserved.
+The candidate is not store-production-ready. The core app is deployed at [recall-f1d1e.web.app](https://recall-f1d1e.web.app). Controlled tests used synthetic Admin-verified accounts; actual email delivery and physical-device features need separate acceptance. OpenAI/RevenueCat secrets and store keys/products remain unset; no live AI or store transaction is claimed.
 
-## Verified 0.2 artifacts
+## Historical 0.2 evidence
 
-| Artifact | Exact current result |
+The following results belong to **0.2.0+2 on 24 October 2026**, before the Firebase port. Earlier backend sources are archived in `legacy/supabase` and `legacy/service`. They are historical records, not current artifact checks:
+
+| Historical result | Recorded evidence |
 | --- | --- |
-| Web | `build/web`; release compile 31.2s; Wasm **dry run** succeeded (no separate Wasm release claim) |
-| Android debug APK | `build/app/outputs/flutter-apk/app-debug.apk`; **166,581,181 bytes**; version **0.2.0+2**; package `com.recharge.recall_next`; min API 26 / target 36; optional microphone; billing and notification permissions present; `apksigner verify` exit 0 |
-| Android release AAB | `build/app/outputs/bundle/release/app-release.aab`; **62,331,476 bytes**; R8/bundle build and ZIP CRC valid; **no signature entries**, therefore unsigned and not ready for upload |
-| iOS simulator bundle | `build/ios/iphonesimulator/Runner.app`; version **0.2.0+2**; bundle `com.recharge.recallNext`; minimum iOS 15; deep/strict signature verification passed |
+| Flutter | 142 tests passed; analysis clean |
+| Supabase reference | 89 PostgreSQL assertions; 47 Edge mocks; five Deno entrypoints checked |
+| Python reference | 29 foundation tests |
+| Web | 31.2s release build; Wasm dry run; 10 captures with no reported browser errors |
+| Android APK | 166,581,181 bytes; debug signature verified; package `com.recharge.recall_next`, min 26 / target 36 |
+| Android AAB | 62,331,476 bytes; R8/bundle and ZIP CRC passed; unsigned |
+| iOS simulator | Build/signature and fresh iPhone 17 / iOS 26.5 first launch passed; feature/device QA not implied |
 
-SHA-256 fingerprints:
+Historical fingerprints:
 
 ```text
-APK  782a08675867d81d67b8b4099f0fb7425a0c504adcf2ac9bd7e0dedce5bfbc44
-AAB  2ee71cb70cafab25683f98023b38a116e589ebf435e3452ff84bc5fdfada1860
+0.2 APK  782a08675867d81d67b8b4099f0fb7425a0c504adcf2ac9bd7e0dedce5bfbc44
+0.2 AAB  2ee71cb70cafab25683f98023b38a116e589ebf435e3452ff84bc5fdfada1860
 ```
 
-A fresh isolated iPhone 17 simulator on iOS 26.5 rendered the welcome screen with
-no error, overflow or notification permission prompt. Evidence:
-`artifacts/qa/ios-v02-first-launch.png` and
-`artifacts/qa/ios-v02-first-launch-status.json`. This was a first-launch rendering
-check; no feature interaction or physical iOS device is claimed. The owned
-temporary simulator was shut down/deleted and cleanup verified; no other simulator
-was changed. Ten web-browser captures reported an empty error list.
-
-Disk filled during release AAB packaging. Cleanup was limited to the owned
-simulator/caches and generated build intermediates; the retry passed. The final
-APK/AAB sizes and fingerprints above were read back from the existing files.
-Samsung's last installation performed by this work remains 0.1. The final ADB
-listing contains no connected device. No 0.2 physical installation or live
-provider/Auth/store transaction has occurred.
-
-Source target [locatelankaltd/recall](https://github.com/locatelankaltd/recall.git)
-is connected as `origin`. The initial local snapshot is being prepared; remote
-upload is unverified because the authenticated account has read-only GitHub access.
-No successful commit/push is claimed. Private QA artifacts remain ignored.
+**The generated 0.2 native outputs were removed for disk space.** These fingerprints must not be attributed to current build paths or to 0.3. Historical screenshots/logs remain; `ios-v02-first-launch.png` is first-launch evidence only, while `ios-first-launch.png` and `samsung-first-launch.png` refer to 0.1. Private QA files remain Git-ignored.
 
 ## Candidate build commands
 
-The root task runs Flutter/native builds serially to avoid toolchain/cache races.
-Use the public configuration described in the [README](../README.md#run) when a
-selected backend/store environment is available. An unconfigured build still
-exercises private device workflows.
-
 ```sh
-flutter build web --release
-flutter build apk --debug
-flutter build appbundle --release
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer flutter build ios --simulator --debug
+flutter build web --release --dart-define-from-file=config/firebase/web.json
+flutter build apk --debug --dart-define-from-file=config/firebase/android.json
+flutter build appbundle --release --dart-define-from-file=config/firebase/android.json
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer flutter build ios --simulator --debug --dart-define-from-file=config/firebase/ios.json
 ```
 
-Expected output locations are `build/web`,
-`build/app/outputs/flutter-apk/app-debug.apk`, and
-`build/ios/iphonesimulator/Runner.app`. A path alone does not establish a completed
-build. Record the result, version, package identity, hash/signature where
-applicable, and exact installed version before attributing QA to it. Debug APKs
-and simulator bundles are not store distribution artifacts.
+Run native builds serially and retain enough disk space. For each completed artifact, record version, package identity, hash, signature and installed version. A path alone is not build evidence. Debug APKs and simulator bundles are not store distribution artifacts.
 
-Current development identities are Android `com.recharge.recall_next` and iOS
-`com.recharge.recallNext`. The native callback is
-`io.recall.app://login-callback` and is registered in both platforms. Permanent
-identities, signing ownership and migration decisions still precede a store
-submission. The original package must not be overwritten as part of that decision.
+Current development storage bounds are 6 MiB across an account and 5 MiB per-project reserved charge. Review headroom is reserved, but a large partial confirmation may safely fail until the owner frees capacity. These are content limits, not unlimited Pro storage.
 
-## Remaining connected-service review
+Current separate development identities are Android `com.recharge.recall_next` and iOS `com.recharge.recallNext`. Permanent store identities, signing ownership and migration decisions remain outstanding. The original app/source/data is preserved; no existing-user or production-data migration is claimed.
 
-- [ ] Complete and retest the selected Firebase-only backend port before deployment.
-  Firebase Hosting is selected; the unprovisioned Supabase implementation remains
-  a reference. Its existing migration/function sequence is migrations 001–005 and `account-delete`, `analyze-source`, `transcribe-recording`,
-  `billing-webhook` and `refresh-entitlement` with their shared modules. Record the
-  exact project/version and inspect grants/advisories.
-- [ ] Configure the web origin, recipient `PUBLIC_APP_URL`, public client key,
-  `AUTH_REDIRECT_URL` and Supabase allowed redirects. Verify controlled sign-up,
-  email/recovery, sign-in/out and account deletion against the candidate.
-- [ ] Verify real owner/outsider isolation and browser review: exact item scope,
-  original/proposed values, identity wording, expiry/revocation, duplicate or
-  interrupted responses, corrections and stale proposals. All required reviews
-  must precede publication; closed links must not reopen source context.
-- [ ] Complete the existing secure OpenAI credential workflow and server settings,
-  then evaluate explicit text/audio consent and draft quality in representative
-  languages. No paid/live accuracy check has happened so far.
-- [ ] Configure RevenueCat/store app keys, products/offerings and `pro` entitlement.
-  Verify actual localized price/period, cancellation/pending/error, purchase,
-  restore, expiry/refund/transfer, server entitlement freshness and Free/Pro caps.
-  SDK success alone must never unlock service. Production sandbox access stays off.
+## Remaining service acceptance
 
-No cloud deployment has occurred. The implemented Supabase backend remains
-unprovisioned and retained as a reference; Firebase Hosting and a Firebase-only
-backend are selected, with the backend port pending. AI provider credentials and RevenueCat/store configuration are
-not set. Server secrets never belong in Flutter public defines. See
-[deployment status](FULL_VERSION_STATUS.md) for the sequence; the Oct 24 local
-build/test evidence does not establish hosted operation.
+- [x] Final backend and Flutter checks passed; `recallApi` and Hosting are deployed to `recall-f1d1e`.
+- [x] Controlled owner/outsider isolation, exact scope, unverified identity wording, stale/revoked links, receipt replay, correction and recent-auth deletion passed at direct and Hosting-proxy endpoints. Fixture Auth/project/link records were removed; minimal hashed deletion fences intentionally remain.
+- [ ] Test actual email verification/recovery delivery separately.
+- [ ] Configure server provider secrets, enable optional AI deliberately, and evaluate source/transcription quality with explicit consent.
+- [ ] Configure store app keys, products/SKUs, offerings and the `pro` entitlement. Verify localized prices/periods, cancellation/pending/error, purchase, restore, expiry/refund and trusted server state. Keep production sandbox access disabled.
 
-## Remaining device and publication review
+## Remaining device and publication acceptance
 
-- [ ] Install and identify the **0.2** candidate on controlled Android/iOS devices.
-  Exercise capture/import/share, recording permission/denial/lifecycle, private
-  audio export/removal, restart/recovery, account transitions and review links.
-  Android receives plain text; do not claim an iOS Share extension.
-- [ ] Verify reminders remain off until enabled, request permission at that point,
-  use the resolved IANA device zone, preserve 09:00 calendar-day behavior across
-  DST, contain generic text, and cancel old workspace/account schedules. Check
-  actual delivery, reboot, timezone changes and device battery restrictions.
-- [ ] Verify TalkBack/VoiceOver, large text, keyboard/safe areas, contrast and
-  reduced motion on supported screens; review EN/ES/FR wording and actual source
-  language/date/currency workflows. Do not infer universal RTL/language quality.
-- [ ] Confirm final package IDs, signing, store records, current platform/SDK and
-  native-library compatibility using the actual Console/Xcode results. Validate
-  Android App Bundle and iOS distribution archive separately from debug builds.
-- [ ] Provide working privacy/support/deletion resources, accurate SDK/data
-  disclosures, subscription terms/management and reviewer access. Account deletion
-  must stay accessible and explain that store subscriptions are cancelled in the
-  store. Review screenshots and metadata against implemented behavior.
-- [ ] Review the exact artifacts and connected/device evidence, then obtain the
-  intended publication decision. Submission, approval and production operation
-  are separate recorded outcomes.
+- [ ] Build and install the identified 0.3 candidate on controlled Android/iOS devices. Exercise recording permission/denial/lifecycle, source import/share, private audio export/removal, account transitions and restart/recovery. Android receives text; an iOS Share extension is not implemented.
+- [ ] Verify reminder opt-in, generic notification content, IANA-zone timing, actual delivery, reboot and workspace cancellation under device battery restrictions.
+- [ ] Review TalkBack/VoiceOver, large text, contrast, keyboard/safe areas, reduced motion and EN/ES/FR wording. Do not infer universal RTL or language quality.
+- [ ] Confirm final package IDs, distribution signing and native compatibility; validate the actual Android bundle and iOS archive.
+- [ ] Supply working privacy/support/deletion resources, accurate SDK/data disclosures, subscription terms and reviewer access. Account deletion must explain that store subscriptions are cancelled separately in the store.
+- [ ] Review the exact release artifacts and connected/device evidence before submission; store approval and production operation are separate outcomes.
 
-Official publication references to verify at submission:
-[Google target API](https://support.google.com/googleplay/android-developer/answer/11926878),
-[Android signing](https://developer.android.com/studio/publish/app-signing),
-[Android page sizes](https://developer.android.com/guide/practices/page-sizes),
-[Apple distribution](https://developer.apple.com/documentation/xcode/distributing-your-app-for-beta-testing-and-releases),
-[Apple review guidelines](https://developer.apple.com/app-store/review/guidelines/),
-[Apple subscriptions](https://developer.apple.com/app-store/subscriptions/),
-[Google subscriptions](https://support.google.com/googleplay/android-developer/answer/9900533),
-[Google deletion](https://support.google.com/googleplay/android-developer/answer/13327111).
+See [Firebase deployment](FIREBASE_DEPLOYMENT.md), [full status](FULL_VERSION_STATUS.md) and the [backend contract](CLOUD_CONTRACT.md). Official publication references: [Android signing](https://developer.android.com/studio/publish/app-signing), [Apple distribution](https://developer.apple.com/documentation/xcode/distributing-your-app-for-beta-testing-and-releases), [Google account deletion](https://support.google.com/googleplay/android-developer/answer/13327111).

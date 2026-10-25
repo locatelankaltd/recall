@@ -1,6 +1,6 @@
 # Recording transcription contract
 
-`transcribe-recording` is an optional authenticated Supabase Edge Function. It
+`transcribe-recording` is an optional authenticated Firebase HTTP endpoint. It
 transcribes the whole recording only after explicit consent and returns a draft
 for the owner to inspect. It does not save audio or transcripts, add evidence to a
 project, publish an agreement, identify a speaker, or confirm another participant.
@@ -26,6 +26,7 @@ Accepted MIME types cover M4A/MP4, WebM, WAV, MP3, FLAC and Ogg. These checks id
 the container, not whether the recording contains intelligible speech; the
 provider must still be able to decode it.
 
+The route is `/transcribe-recording` under the configured `recallApi` base.
 The provider destination is fixed to
 `https://api.openai.com/v1/audio/transcriptions`. The server creates a fresh
 multipart body with a sanitized `recording.<extension>` filename, so the sender's
@@ -54,9 +55,10 @@ original quote, translation, speaker identification or agreement.
 
 ## Server deployment
 
-The handler verifies the bearer access token with `auth.getUser`, so its config
-uses `verify_jwt=false` while retaining application-level authentication.
-Deployment requires the function and the existing analysis-quota migration.
+The shared `recallApi` router validates a revoked-token-aware Firebase ID token
+and verified email before invoking this handler. Deployment uses Node 22 in
+`europe-west1`; Firestore transactions reserve the same owner/service quotas as
+source analysis. There is no Supabase runtime dependency.
 
 | Server variable | Purpose |
 | --- | --- |
@@ -65,7 +67,11 @@ Deployment requires the function and the existing analysis-quota migration.
 | `RECALL_TRANSCRIBE_MODEL` | Optional allowlisted model override |
 | `RECALL_AI_DAILY_LIMIT` | Administrator upper cap for AI, default 20; 1–100 |
 | `APP_ORIGIN` | Deployed web origin for CORS; native clients omit Origin |
-| Supabase runtime variables | Auth verification and service-only quota reservation |
+| Firebase Admin runtime identity | Auth verification and server-only Firestore quota reservation |
+
+Deployment flag `RECALL_AI_ENABLED=1` binds the `OPENAI_API_KEY` Secret Manager
+value; changing bindings requires redeployment. Initial disabled deployment needs
+no provider secret.
 
 The default transcription model is `gpt-transcribe`. The current implementation
 also permits server overrides `gpt-4o-mini-transcribe` and `gpt-4o-transcribe`.
@@ -75,7 +81,7 @@ provider or service-role secrets into Flutter's public build configuration.
 
 A daily reservation occurs before the provider request and is not refunded for
 provider failures. Transcription and source analysis share the same Auth UUID /
-UTC-day counter through the service-only `recall_reserve_analysis` RPC. Free
+UTC-day counter through an internal Firestore transaction; no client quota-write RPC is exposed. Free
 accounts have up to 5 combined requests/day; fresh verified Pro has up to 20.
 The administrator cap may lower those values. Every account also shares the
 service-wide hard budget of 100 requests per UTC day, reserved atomically with
@@ -87,14 +93,14 @@ makes **no zero-retention claim about the provider**.
 
 ## Verification
 
-Run `node --test supabase/tests/transcription_functions.test.mjs`. Its 18 tests
+Run `npm --prefix functions run test:emulator`. Its transcription provider tests
 mock Auth, quota and provider calls in memory; no recording is uploaded and no
 paid provider call occurs. Coverage includes consent/identity/configuration
 checks, unknown and duplicate fields, actual streamed caps, MIME/signatures,
 filename stripping, exact file limits, model routing, provider errors/timeouts,
 malformed/oversized output, no retries and no-store responses.
 
-Real Auth, deployed Edge invocation, device recording formats, speech accuracy,
+Deployed Firebase invocation, device recording formats, speech accuracy,
 latency and multilingual transcription quality require deployment/device checks.
 Provider contract reference:
 [OpenAI speech-to-text documentation](https://developers.openai.com/api/docs/guides/speech-to-text).

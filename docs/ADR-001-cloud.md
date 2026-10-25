@@ -1,6 +1,7 @@
 # ADR-001: Authoritative cloud agreements and verified subscriptions
 
-**Status:** Accepted for implementation; deployment awaits workspace selection
+**Status:** Superseded by [ADR-002: Firebase](ADR-002-firebase.md). The Supabase
+implementation is retained under `legacy/supabase` for historical reference.
 
 **Date:** 2026-10-24
 

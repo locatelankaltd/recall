@@ -59,6 +59,12 @@ class FakeAuth implements RecallAuthProvider {
   }
 
   @override
+  Future<void> reauthenticate(String password) async {
+    actions.add('reauthenticate');
+    if (failSignIn) throw const CloudException('Incorrect password');
+  }
+
+  @override
   Future<void> deleteAccount() async {
     actions.add('delete');
   }
@@ -124,12 +130,17 @@ void main() {
       final session = RecallSessionManager(provider: auth);
       auth.failSignIn = true;
       expect(await session.deleteAccount(password: 'wrong'), isFalse);
-      expect(auth.actions, ['signIn']);
+      expect(auth.actions, ['reauthenticate']);
       expect(session.deletedUserId, isNull);
       expect(session.isSignedIn, isTrue);
       auth.failSignIn = false;
       expect(await session.deleteAccount(password: 'correct'), isTrue);
-      expect(auth.actions, ['signIn', 'signIn', 'delete', 'signOut']);
+      expect(auth.actions, [
+        'reauthenticate',
+        'reauthenticate',
+        'delete',
+        'signOut',
+      ]);
       expect(session.isSignedIn, isFalse);
       expect(session.deletedUserId, 'account-a');
       session.dispose();

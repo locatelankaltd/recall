@@ -41,6 +41,14 @@ migrate_working_dir/
 # Private screenshots from physical-device checks stay on this computer.
 /artifacts/qa/
 
+# Firebase local caches, emulator output and dependencies.
+.firebase/
+**/node_modules/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+.runtimeconfig.json
+
 # Symbolication related
 app.*.symbols
 

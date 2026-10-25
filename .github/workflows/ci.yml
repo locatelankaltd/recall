@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    name: Flutter analysis and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: '3.44.0'
+          cache: true
+      - name: Verify Flutter and bundled Dart versions
+        run: |
+          flutter --version --machine > "$RUNNER_TEMP/recall-flutter-version.json"
+          python3 - <<'PY'
+          import json, os
+          with open(os.path.join(os.environ['RUNNER_TEMP'], 'recall-flutter-version.json')) as source:
+              version = json.load(source)
+          assert version['frameworkVersion'] == '3.44.0', version
+          assert version['dartSdkVersion'].startswith('3.12.'), version
+          print('Flutter ' + version['frameworkVersion'] + ' / Dart ' + version['dartSdkVersion'])
+          PY
+      - name: Restore locked Flutter dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Analyze
+        run: flutter analyze --no-pub --fatal-infos
+      - name: Run Flutter tests
+        run: flutter test --no-pub --concurrency=2
+
+  backend:
+    name: Backend build and emulator tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GCLOUD_PROJECT: demo-recall-backend
+      GOOGLE_CLOUD_PROJECT: demo-recall-backend
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Restore locked backend dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Install pinned Firebase CLI
+        run: npm install --global firebase-tools@15.32.0 --no-audit --no-fund
+      - name: Show backend tool versions
+        run: |
+          node --version
+          java --version
+          firebase --version
+      - name: Build and test with isolated Auth and Firestore emulators
+        run: npm run test:emulator

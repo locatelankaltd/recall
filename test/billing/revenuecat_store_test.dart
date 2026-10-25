@@ -106,7 +106,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
   test(
-    'native purchase waits for login and binds the Supabase UUID first',
+    'native purchase waits for login and binds the Firebase UID first',
     () async {
       loginWait = Completer<dynamic>();
       final store = RevenueCatStore(androidKey: 'goog_mock_public_key');

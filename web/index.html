@@ -19,21 +19,61 @@
   <meta charset="UTF-8">
   <meta name="referrer" content="no-referrer">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Keep client requests, project changes and approvals in one clear plan.">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="recall_next">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <meta name="apple-mobile-web-app-title" content="Recall">
+  <link rel="apple-touch-icon" href="icons/recall-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/svg+xml" sizes="any" href="icons/recall.svg">
+  <meta name="theme-color" content="#14535B">
 
-  <title>recall_next</title>
+  <title>Recall</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <style>
+    #recall-loading{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:#f6f2ea;color:#243b36;font:16px/1.6 system-ui,sans-serif;text-align:center;padding:24px}
+    #recall-loading img{width:64px;height:64px;border-radius:16px}
+    #recall-loading h1{font-size:32px;letter-spacing:-1px;line-height:1.2;margin:20px 0 8px}
+    #recall-loading p{max-width:320px;margin:0 auto;color:#53695f}
+    #recall-loading .track{width:160px;height:3px;border-radius:3px;background:#d6dfd5;overflow:hidden;margin:24px auto}
+    #recall-loading .track span{display:block;width:50%;height:100%;background:#14535b;animation:recall-opening 1.5s ease-in-out infinite alternate}
+    #recall-loading button{min-height:44px;padding:8px 24px;margin-top:20px;border:1px solid currentColor;border-radius:12px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+    #recall-loading button:focus-visible{outline:3px solid #b38626;outline-offset:4px}
+    @keyframes recall-opening{from{transform:translateX(-75%)}to{transform:translateX(175%)}}
+    @media(prefers-reduced-motion:reduce){#recall-loading .track span{animation:none;width:100%}}
+    @media(prefers-color-scheme:dark){#recall-loading{background:#142326;color:#f6f2ea}#recall-loading p{color:#b5c5c3}#recall-loading .track{background:#2d474a}#recall-loading .track span{background:#add5d4}}
+  </style>
+  <div id="recall-loading" role="status" aria-live="polite" aria-busy="true">
+    <div>
+      <img src="icons/recall.svg" alt="" width="64" height="64">
+      <h1>Recall</h1>
+      <p id="recall-opening-message">Opening your workspace…</p>
+      <div class="track" aria-hidden="true"><span></span></div>
+      <button id="recall-reload" type="button" hidden>Reload</button>
+      <noscript><p>Enable JavaScript to open Recall.</p></noscript>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const loader = document.getElementById('recall-loading');
+      const retry = document.getElementById('recall-reload');
+      retry.addEventListener('click', () => window.location.reload());
+      const timeout = window.setTimeout(() => {
+        document.getElementById('recall-opening-message').textContent =
+          'Still loading. Check your connection, or try reloading.';
+        retry.hidden = false;
+      }, 20000);
+      window.addEventListener('flutter-first-frame', () => {
+        window.clearTimeout(timeout);
+        loader.remove();
+      }, {once: true});
+    })();
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

@@ -18,10 +18,14 @@ class HostAuth implements RecallAuthProvider {
   RecallAccount? get currentAccount => account;
   @override
   Stream<RecallAuthEvent> get changes => events.stream;
-  void emit(String? id, {bool recovery = false}) {
+  void emit(String? id, {bool recovery = false, bool verified = true}) {
     account = id == null
         ? null
-        : RecallAccount(id: id, email: '$id@example.com', emailVerified: true);
+        : RecallAccount(
+            id: id,
+            email: '$id@example.com',
+            emailVerified: verified,
+          );
     events.add(RecallAuthEvent(account, passwordRecovery: recovery));
   }
 
@@ -179,4 +183,24 @@ void main() {
     fixture.session.dispose();
     await fixture.auth.events.close();
   });
+  testWidgets(
+    'unverified signup stays in the private device workspace until email verification',
+    (tester) async {
+      final fixture = await start(tester);
+      fixture.auth.emit('account-b', verified: false);
+      await tester.pumpAndSettle();
+      expect(identical(active(tester), fixture.local), isTrue);
+      expect(fixture.gateway.fetchedOwners, ['account-a']);
+      expect(fixture.local.projects.single.id, privateProject.id);
+      fixture.auth.emit('account-b', verified: true);
+      await tester.pumpAndSettle();
+      expect(active(tester).isCloud, isTrue);
+      expect(active(tester).projects.single.id, projectB.id);
+      expect(fixture.gateway.fetchedOwners, ['account-a', 'account-b']);
+      expect(fixture.gateway.createCalls, 0);
+      await tester.pumpWidget(const SizedBox.shrink());
+      fixture.session.dispose();
+      await fixture.auth.events.close();
+    },
+  );
 }

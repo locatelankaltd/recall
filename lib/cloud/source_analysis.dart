@@ -3,7 +3,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'cloud_gateway.dart';
+import 'recall_api.dart';
 
 class SourceAiException implements Exception {
   const SourceAiException(this.messageKey);
@@ -22,11 +23,11 @@ abstract interface class SourceAiTransport {
   });
 }
 
-class SupabaseSourceAiTransport implements SourceAiTransport {
-  const SupabaseSourceAiTransport(this.client);
-  final SupabaseClient client;
+class FirebaseSourceAiTransport implements SourceAiTransport {
+  const FirebaseSourceAiTransport(this.client);
+  final RecallApiClient client;
   @override
-  String? get userId => client.auth.currentUser?.id;
+  String? get userId => client.userId;
   @override
   Future<Object?> invoke(
     String function, {
@@ -35,20 +36,22 @@ class SupabaseSourceAiTransport implements SourceAiTransport {
     Future<void>? abortSignal,
   }) async {
     final owner = userId;
-    final token = client.auth.currentSession?.accessToken;
-    if (owner == null || token == null || token.isEmpty) {
-      throw const SourceAiException('aiSignIn');
+    if (owner == null) throw const SourceAiException('aiSignIn');
+    try {
+      final result = await client.invoke(
+        function,
+        body: body,
+        files: files,
+        abortSignal: abortSignal,
+      );
+      if (userId != owner) throw const SourceAiException('aiAccountChanged');
+      return result;
+    } on CloudException catch (error) {
+      if (error.code == 'account_changed') {
+        throw const SourceAiException('aiAccountChanged');
+      }
+      rethrow;
     }
-    final result = await client.functions.invoke(
-      function,
-      // Bind the clicked account before the SDK's asynchronous auth lookup.
-      headers: {'Authorization': 'Bearer $token'},
-      body: body,
-      files: files,
-      abortSignal: abortSignal,
-    );
-    if (userId != owner) throw const SourceAiException('aiAccountChanged');
-    return result.data;
   }
 }
 
@@ -95,8 +98,8 @@ class SourceAnalysisResult {
 /// audio path, or direct provider destination is accepted from the client.
 class SourceAnalysisClient {
   const SourceAnalysisClient({required this.transport});
-  factory SourceAnalysisClient.forSupabase(SupabaseClient client) =>
-      SourceAnalysisClient(transport: SupabaseSourceAiTransport(client));
+  factory SourceAnalysisClient.forCloud(RecallApiClient client) =>
+      SourceAnalysisClient(transport: FirebaseSourceAiTransport(client));
   final SourceAiTransport transport;
   static const maxAudioBytes = 20 * 1024 * 1024;
   String? get userId => transport.userId;
@@ -130,7 +133,7 @@ class SourceAnalysisClient {
       return result;
     } on SourceAiException {
       rethrow;
-    } on FunctionException catch (problem) {
+    } on RecallApiException catch (problem) {
       // Provider/server response details may contain private data. Expose only
       // safe, local message keys based on the HTTP status, never raw messages.
       throw SourceAiException(switch (problem.status) {

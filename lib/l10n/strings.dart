@@ -102,6 +102,11 @@ const strings = <String, Map<String, String>>{
     'settings': 'Your workspace',
     'language': 'Interface language',
     'privacy': 'Privacy and storage',
+    'privacyPolicy': 'Privacy details',
+    'Your workspace has reached a service limit. Export or remove an older project, or try again later.':
+        'Your workspace has reached a service limit. Export or remove an older project, or try again later.',
+    'contactSupport': 'Contact support',
+    'accountDeletionInfo': 'Account deletion help',
     "privacyBody":
         "Mobile project text uses device secure storage. Audio attachments are ordinary app-private files and are not encrypted by that service. Web storage has different protections. Account projects use the configured cloud service; device projects are never uploaded automatically. Optional AI sends only the specific text or whole recording you explicitly approve.",
     'appearance': 'Appearance follows your device',
@@ -145,7 +150,7 @@ const strings = <String, Map<String, String>>{
         'This export contains private project and source text. Recording files are not included; export recordings separately before moving devices. Share only with people you choose.',
     'support': 'Build information',
     "supportBody":
-        "Recall 0.2. Sign in for your cloud workspace and review links. Optional AI and store subscriptions are available when their services are configured. Optional deadline reminders are available on Android and iOS with notification permission.",
+        "Recall 0.3. Sign in for your cloud workspace and review links. Optional AI and store subscriptions are available when their services are configured. Optional deadline reminders are available on Android and iOS with notification permission.",
     'sourceSaved': 'Original language preserved',
     'reviewEmpty': 'No pending changes. The current plan is up to date.',
     'copy': 'Copy export',
@@ -645,6 +650,11 @@ const strings = <String, Map<String, String>>{
     'settings': 'Tu espacio',
     'language': 'Idioma de la interfaz',
     'privacy': 'Privacidad y almacenamiento',
+    'privacyPolicy': 'Detalles de privacidad',
+    'Your workspace has reached a service limit. Export or remove an older project, or try again later.':
+        'Tu espacio ha alcanzado un límite del servicio. Exporta o elimina un proyecto antiguo, o inténtalo más tarde.',
+    'contactSupport': 'Contactar con soporte',
+    'accountDeletionInfo': 'Ayuda para eliminar la cuenta',
     'appearance': 'Apariencia según tu dispositivo',
     'delete': 'Eliminar espacio local',
     'deleteAction': 'Eliminar datos locales',
@@ -686,7 +696,7 @@ const strings = <String, Map<String, String>>{
     "privacyBody":
         "El texto de los proyectos móviles usa el almacenamiento seguro del dispositivo. Los audios son archivos privados de la aplicación y ese servicio no los cifra. El almacenamiento web tiene otras protecciones. Los proyectos de cuenta usan el servicio en la nube configurado; los proyectos del dispositivo nunca se suben automáticamente. La IA opcional solo envía el texto concreto o la grabación completa que apruebes explícitamente.",
     "supportBody":
-        "Recall 0.2. Inicia sesión para usar tu espacio en la nube y los enlaces de revisión. La IA opcional y las suscripciones de la tienda están disponibles cuando sus servicios están configurados. Los recordatorios opcionales de fechas límite están disponibles en Android e iOS con permiso de notificaciones.",
+        "Recall 0.3. Inicia sesión para usar tu espacio en la nube y los enlaces de revisión. La IA opcional y las suscripciones de la tienda están disponibles cuando sus servicios están configurados. Los recordatorios opcionales de fechas límite están disponibles en Android e iOS con permiso de notificaciones.",
     "noReview": "No hay cambios que necesiten tu revisión.",
     "noAmount": "Sin importe registrado",
     "baselineNote":
@@ -1214,6 +1224,11 @@ const strings = <String, Map<String, String>>{
     'settings': 'Votre espace',
     'language': "Langue de l'interface",
     'privacy': 'Confidentialité et stockage',
+    'privacyPolicy': 'Détails de confidentialité',
+    'Your workspace has reached a service limit. Export or remove an older project, or try again later.':
+        'Votre espace a atteint une limite du service. Exportez ou supprimez un ancien projet, ou réessayez plus tard.',
+    'contactSupport': 'Contacter l’assistance',
+    'accountDeletionInfo': 'Aide à la suppression du compte',
     'appearance': "Apparence selon l'appareil",
     'delete': "Supprimer l'espace local",
     'deleteAction': 'Supprimer les données locales',
@@ -1255,7 +1270,7 @@ const strings = <String, Map<String, String>>{
     "privacyBody":
         "Le texte des projets mobiles utilise le stockage sécurisé de l’appareil. Les pièces jointes audio sont des fichiers privés de l’application et ne sont pas chiffrées par ce service. Le stockage web offre des protections différentes. Les projets de compte utilisent le service cloud configuré ; les projets de l’appareil ne sont jamais transférés automatiquement. L’IA facultative envoie uniquement le texte précis ou l’enregistrement entier que vous autorisez explicitement.",
     "supportBody":
-        "Recall 0.2. Connectez-vous pour utiliser votre espace cloud et les liens de révision. L’IA facultative et les abonnements de la boutique sont disponibles lorsque leurs services sont configurés. Les rappels facultatifs d’échéances sont disponibles sur Android et iOS avec l’autorisation de notification.",
+        "Recall 0.3. Connectez-vous pour utiliser votre espace cloud et les liens de révision. L’IA facultative et les abonnements de la boutique sont disponibles lorsque leurs services sont configurés. Les rappels facultatifs d’échéances sont disponibles sur Android et iOS avec l’autorisation de notification.",
     "noReview": "Aucune modification ne nécessite votre examen.",
     "noAmount": "Aucun montant enregistré",
     "baselineNote":

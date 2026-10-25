@@ -1,0 +1,8 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    { "collectionGroup": "revisions", "fieldPath": "model", "indexes": [] },
+    { "collectionGroup": "requestChunks", "fieldPath": "data", "indexes": [] },
+    { "collectionGroup": "requests", "fieldPath": "response", "indexes": [] }
+  ]
+}

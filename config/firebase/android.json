@@ -1,0 +1,10 @@
+{
+  "FIREBASE_PROJECT_ID": "recall-f1d1e",
+  "FIREBASE_AUTH_DOMAIN": "recall-f1d1e.firebaseapp.com",
+  "FIREBASE_MESSAGING_SENDER_ID": "70254700826",
+  "FIREBASE_STORAGE_BUCKET": "recall-f1d1e.firebasestorage.app",
+  "RECALL_API_URL": "https://europe-west1-recall-f1d1e.cloudfunctions.net/recallApi",
+  "PUBLIC_APP_URL": "https://recall-f1d1e.web.app",
+  "FIREBASE_API_KEY": "AIzaSyCsmSMlrcl3yVRaPZIQpNJqMD94G076HgA",
+  "FIREBASE_APP_ID": "1:70254700826:android:8d42c904df72aa527824a3"
+}

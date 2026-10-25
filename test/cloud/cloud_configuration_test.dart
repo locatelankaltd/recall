@@ -1,66 +1,72 @@
-import 'dart:convert';
-
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recall_next/cloud/recall_cloud.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('unconfigured builds expose no Firebase-backed cloud success', () async {
+    final cloud = await RecallCloud.initialize(
+      config: const RecallCloudConfig(),
+    );
+    expect(cloud.client, isNull);
+    expect(cloud.projects, isNull);
+    expect(cloud.reviews, isNull);
+    expect(cloud.session.configured, isFalse);
+    cloud.session.dispose();
+  });
   test(
-    'unconfigured and private-key builds cannot initialize a cloud client',
-    () async {
-      final cloud = await RecallCloud.initialize(
-        config: const RecallCloudConfig(url: '', anonKey: ''),
+    'Firebase config accepts public options and derives one project endpoint',
+    () {
+      const config = RecallCloudConfig(
+        apiKey: 'AIzaTestPublicConfiguration',
+        appId: '1:123456789:web:abcdef',
+        projectId: 'recall-test',
+        messagingSenderId: '123456789',
       );
-      expect(cloud.client, isNull);
-      expect(cloud.projects, isNull);
-      expect(cloud.reviews, isNull);
-      expect(cloud.session.configured, isFalse);
-      cloud.session.dispose();
+      expect(config.validationError, isNull);
       expect(
-        const RecallCloudConfig(
-          url: 'https://example.supabase.co',
-          anonKey: 'sb_secret_private',
-        ).validationError,
-        contains('public client key'),
+        config.endpoint.toString(),
+        'https://europe-west1-recall-test.cloudfunctions.net/recallApi',
       );
-      final payload = base64Url.encode(
-        utf8.encode(jsonEncode({'role': 'service_role'})),
-      );
-      expect(
-        RecallCloudConfig(
-          url: 'https://example.supabase.co',
-          anonKey: 'header.$payload.signature',
-        ).validationError,
-        contains('public client key'),
-      );
-      expect(
-        const RecallCloudConfig(
-          url: 'http://public.example',
-          anonKey: 'sb_publishable_public',
-        ).validationError,
-        contains('secure connection'),
-      );
+      expect(config.options.authDomain, 'recall-test.firebaseapp.com');
+      expect(config.options.projectId, 'recall-test');
     },
   );
   test(
-    'session and PKCE storage isolate environments and remove persisted credentials',
-    () async {
-      FlutterSecureStorage.setMockInitialValues({});
-      final first = SecureRecallAuthStorage(namespace: 'one');
-      final second = SecureRecallAuthStorage(namespace: 'two');
-      await first.initialize();
-      await first.persistSession('session-one');
-      expect(await first.hasAccessToken(), isTrue);
-      expect(await second.accessToken(), isNull);
-      final pkce = SecureRecallPkceStorage(namespace: 'one');
-      await pkce.setItem(key: 'verifier', value: 'private-verifier');
-      expect(await first.accessToken(), 'session-one');
-      await first.removePersistedSession();
-      expect(await first.hasAccessToken(), isFalse);
-      expect(await pkce.getItem(key: 'verifier'), 'private-verifier');
-      await pkce.removeItem(key: 'verifier');
-      expect(await pkce.getItem(key: 'verifier'), isNull);
+    'private credentials and insecure or token-bearing endpoints are rejected',
+    () {
+      RecallCloudConfig config(String key, String endpoint) =>
+          RecallCloudConfig(
+            apiKey: key,
+            appId: '1:123456789:web:abcdef',
+            projectId: 'recall-test',
+            messagingSenderId: '123456789',
+            apiUrl: endpoint,
+          );
+      expect(
+        config(
+          '-----BEGIN PRIVATE KEY-----',
+          'https://recall.invalid/api',
+        ).validationError,
+        isNotNull,
+      );
+      expect(
+        config('AIzaPublicKey', 'http://remote.example/api').validationError,
+        contains('secure connection'),
+      );
+      expect(
+        config(
+          'AIzaPublicKey',
+          'https://recall.invalid/api?token=private',
+        ).validationError,
+        isNotNull,
+      );
+      expect(
+        config(
+          'AIzaPublicKey',
+          'http://localhost:5001/test/europe-west1/recallApi',
+        ).validationError,
+        isNull,
+      );
     },
   );
 }

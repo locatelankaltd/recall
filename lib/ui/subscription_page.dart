@@ -1,21 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../cloud/recall_api.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../billing/billing_service.dart';
 import '../billing/revenuecat_store.dart';
-import '../billing/supabase_billing_server.dart';
+import '../billing/firebase_billing_server.dart';
 import '../design/design.dart';
 import '../l10n/strings.dart';
 import 'widgets.dart';
 
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({super.key, this.client, this.controller});
-  final SupabaseClient? client;
+  final RecallApiClient? client;
 
-  /// Dependency injection for tests. Production uses native stores and Supabase.
+  /// Dependency injection for tests. Production uses native stores and Firebase.
   final BillingController? controller;
   @override
   State<SubscriptionPage> createState() => _SubscriptionPageState();
@@ -24,7 +24,7 @@ class SubscriptionPage extends StatefulWidget {
 class _SubscriptionPageState extends State<SubscriptionPage>
     with WidgetsBindingObserver {
   late final BillingController _billing;
-  StreamSubscription<AuthState>? _auth;
+  StreamSubscription<String?>? _auth;
   String? _owner;
   @override
   void initState() {
@@ -34,14 +34,13 @@ class _SubscriptionPageState extends State<SubscriptionPage>
         widget.controller ??
         BillingController(
           store: RevenueCatStore(),
-          server: SupabaseBillingServer(widget.client),
-          currentUserId: () => widget.client?.auth.currentUser?.id,
+          server: FirebaseBillingServer(widget.client),
+          currentUserId: () => widget.client?.userId,
         );
-    _owner = widget.client?.auth.currentUser?.id;
+    _owner = widget.client?.userId;
     if (widget.client != null) {
       RevenueCatStore.observeSession(widget.client!);
-      _auth = widget.client!.auth.onAuthStateChange.listen((state) {
-        final owner = state.session?.user.id;
+      _auth = widget.client!.userChanges.listen((owner) {
         if (owner == _owner) return;
         _owner = owner;
         _billing.sessionChanged();

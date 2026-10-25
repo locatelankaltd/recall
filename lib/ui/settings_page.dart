@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../app_services.dart';
 import 'subscription_page.dart';
 import 'reminders_page.dart';
@@ -86,6 +87,16 @@ class SettingsPage extends StatelessWidget {
         ),
         SectionLabel(tr(context, 'privacy')),
         Text(tr(context, 'privacyBody')),
+        TextButton(
+          onPressed: () =>
+              perform(context, () => _openResource('/privacy.html')),
+          child: Text(tr(context, 'privacyPolicy')),
+        ),
+        TextButton(
+          onPressed: () =>
+              perform(context, () => _openResource('/delete-account.html')),
+          child: Text(tr(context, 'accountDeletionInfo')),
+        ),
         const SizedBox(height: 20),
         OutlinedButton.icon(
           icon: const RecallIcon(RecallGlyph.export, size: 20),
@@ -101,6 +112,11 @@ class SettingsPage extends StatelessWidget {
           ),
         SectionLabel(tr(context, 'support')),
         Text(tr(context, 'supportBody')),
+        TextButton(
+          onPressed: () =>
+              perform(context, () => _openResource('/support.html')),
+          child: Text(tr(context, 'contactSupport')),
+        ),
         const SizedBox(height: 12),
         Text(
           tr(context, 'appearance'),
@@ -111,7 +127,7 @@ class SettingsPage extends StatelessWidget {
           onPressed: () => showLicensePage(
             context: context,
             applicationName: 'Recall',
-            applicationVersion: '0.2.0',
+            applicationVersion: '0.3.0',
           ),
           child: Text(tr(context, 'licenses')),
         ),
@@ -134,6 +150,23 @@ class SettingsPage extends StatelessWidget {
       ],
     ),
   );
+
+  Future<void> _openResource(String path) async {
+    const configured = String.fromEnvironment(
+      'PUBLIC_APP_URL',
+      defaultValue: 'https://recall-f1d1e.web.app',
+    );
+    final base = Uri.tryParse(configured);
+    if (base == null || base.scheme != 'https' || base.host.isEmpty) {
+      throw StateError('Support links are not configured for this build.');
+    }
+    if (!await launchUrl(
+      base.resolve(path),
+      mode: LaunchMode.externalApplication,
+    )) {
+      throw StateError('The support page could not be opened.');
+    }
+  }
 
   Future<void> _export(BuildContext context) async {
     await showModalBottomSheet<void>(

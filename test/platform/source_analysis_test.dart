@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:recall_next/cloud/source_analysis.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:recall_next/cloud/recall_api.dart';
 
 class FakeSourceAiTransport implements SourceAiTransport {
   @override
@@ -291,9 +291,9 @@ void main() {
         504: 'aiTimeout',
         500: 'aiFailed',
       }.entries) {
-        transport.handler = () async => throw FunctionException(
+        transport.handler = () async => throw RecallApiException(
+          'Private source or provider credential',
           status: entry.key,
-          details: 'Private source or provider credential',
         );
         await expectLater(
           client.analyze(
